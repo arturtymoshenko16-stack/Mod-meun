@@ -68,10 +68,6 @@ public class OverlayService extends Service {
         bubbleParams.x = dp(12);
         bubbleParams.y = dp(130);
         icon.setOnTouchListener(dragListener(bubbleParams, true));
-        icon.setOnClickListener(v -> {
-            removeBubble();
-            showPanel();
-        });
         wm.addView(bubble, bubbleParams);
     }
 
@@ -181,7 +177,13 @@ public class OverlayService extends Service {
                     }
                     return true;
                 }
-                if (event.getAction() == MotionEvent.ACTION_UP) return moved || isBubble;
+                if (event.getAction() == MotionEvent.ACTION_UP) {
+                    if (isBubble && !moved) {
+                        removeBubble();
+                        showPanel();
+                    }
+                    return true;
+                }
                 return isBubble;
             }
         };
