@@ -39,11 +39,11 @@ public class OverlayService extends Service {
                 PixelFormat.TRANSLUCENT);
     }
 
-    private GradientDrawable shape(int color, int stroke) {
+    private GradientDrawable shape(int color, int stroke, int radius) {
         GradientDrawable d = new GradientDrawable();
         d.setColor(color);
-        d.setCornerRadius(dp(8));
-        d.setStroke(dp(1), stroke);
+        d.setCornerRadius(dp(radius));
+        if (stroke != 0) d.setStroke(dp(1), stroke);
         return d;
     }
 
@@ -52,6 +52,7 @@ public class OverlayService extends Service {
         t.setText(value);
         t.setTextSize(size);
         t.setTextColor(color);
+        t.setIncludeFontPadding(true);
         return t;
     }
 
@@ -60,7 +61,7 @@ public class OverlayService extends Service {
         TextView icon = text("M", 20, Color.WHITE);
         icon.setGravity(Gravity.CENTER);
         icon.setTypeface(Typeface.DEFAULT_BOLD);
-        icon.setBackground(shape(Color.rgb(28, 38, 45), Color.rgb(50, 203, 0)));
+        icon.setBackground(shape(Color.rgb(28, 38, 45), Color.rgb(50, 203, 0), 24));
         bubble = icon;
         bubbleParams = makeParams(dp(48), dp(48));
         bubbleParams.gravity = Gravity.TOP | Gravity.START;
@@ -79,93 +80,123 @@ public class OverlayService extends Service {
 
     private void showPanel() {
         if (panel != null) return;
+
         LinearLayout outer = new LinearLayout(this);
         outer.setOrientation(LinearLayout.VERTICAL);
-        outer.setPadding(dp(10), dp(8), dp(10), dp(10));
-        outer.setBackground(shape(0xEE1C2A35, 0xFF32CB00));
+        outer.setBackground(shape(0xF20A1722, 0xFF263B49, 2));
+        outer.setClipToOutline(true);
 
         LinearLayout header = new LinearLayout(this);
         header.setGravity(Gravity.CENTER_VERTICAL);
-        header.setPadding(dp(4), dp(2), dp(2), dp(8));
-        TextView title = text("MOD MENU", 17, 0xFF82CAFD);
+        header.setPadding(dp(14), dp(8), dp(10), dp(6));
+        header.setBackgroundColor(0xFF152A38);
+
+        TextView title = text("MOD MENU", 25, 0xFF39BCEB);
         title.setTypeface(Typeface.DEFAULT_BOLD);
-        header.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
-        TextView collapse = text("—", 24, Color.WHITE);
-        collapse.setGravity(Gravity.CENTER);
-        header.addView(collapse, new LinearLayout.LayoutParams(dp(34), dp(32)));
-        TextView close = text("×", 24, 0xFFFF7777);
-        close.setGravity(Gravity.CENTER);
-        header.addView(close, new LinearLayout.LayoutParams(dp(34), dp(32)));
+        title.setGravity(Gravity.CENTER);
+        header.addView(title, new LinearLayout.LayoutParams(0, dp(56), 1));
+
+        TextView settings = text("⚙", 34, 0xFFE3EAF0);
+        settings.setGravity(Gravity.CENTER);
+        header.addView(settings, new LinearLayout.LayoutParams(dp(54), dp(56)));
         outer.addView(header);
 
-        TextView subtitle = text("Floating interface • UI demo", 10, 0xFF82CAFD);
-        outer.addView(subtitle);
+        TextView subtitle = text(" ", 10, Color.WHITE);
+        subtitle.setPadding(dp(12), 0, dp(12), 0);
+        subtitle.setBackgroundColor(0xFF152A38);
+        outer.addView(subtitle, new LinearLayout.LayoutParams(-1, dp(12)));
+
+        TextView slider = text("▽ Slider ▽", 21, Color.WHITE);
+        slider.setTypeface(Typeface.DEFAULT_BOLD);
+        slider.setGravity(Gravity.CENTER);
+        slider.setBackgroundColor(0xFF183342);
+        outer.addView(slider, new LinearLayout.LayoutParams(-1, dp(62)));
 
         ScrollView scroll = new ScrollView(this);
-        LinearLayout features = new LinearLayout(this);
-        features.setOrientation(LinearLayout.VERTICAL);
-        features.setPadding(0, dp(8), 0, 0);
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(dp(8), dp(8), dp(8), dp(8));
+        content.setBackgroundColor(0xF2081723);
 
-        addCategory(features, "DEMO OPTIONS");
-        addDemoSwitch(features, "Demo toggle 1");
-        addDemoSwitch(features, "Demo toggle 2");
-        addDemoSwitch(features, "Demo toggle 3");
-        addCategory(features, "DISPLAY");
-        addDemoSwitch(features, "Compact mode (visual only)");
-        scroll.addView(features);
-        outer.addView(scroll, new LinearLayout.LayoutParams(dp(270), dp(230)));
+        for (int i = 1; i <= 5; i++) addToggle(content, "Toggles " + i);
+        addCheckbox(content, "Checkbox 1");
+        scroll.addView(content);
+        outer.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
 
-        TextView footer = text("Controls do not modify the game", 10, 0xFFB8C7D9);
-        footer.setPadding(dp(2), dp(8), 0, 0);
-        outer.addView(footer);
+        LinearLayout footer = new LinearLayout(this);
+        footer.setGravity(Gravity.CENTER_VERTICAL);
+        footer.setPadding(dp(12), dp(8), dp(12), dp(8));
+        footer.setBackgroundColor(0xFF142C3A);
 
-        panel = outer;
-        panelParams = makeParams(-2, -2);
-        panelParams.gravity = Gravity.TOP | Gravity.START;
-        panelParams.x = dp(12);
-        panelParams.y = dp(130);
-        header.setOnTouchListener(dragListener(panelParams, false));
-        collapse.setOnClickListener(v -> {
+        TextView hide = text("HIDE/KILL (HOLD)", 17, 0xFF32BCEB);
+        hide.setTypeface(Typeface.DEFAULT_BOLD);
+        hide.setGravity(Gravity.CENTER_VERTICAL);
+        footer.addView(hide, new LinearLayout.LayoutParams(0, dp(58), 1));
+
+        TextView minimize = text("MINIMIZE", 18, 0xFF32BCEB);
+        minimize.setTypeface(Typeface.DEFAULT_BOLD);
+        minimize.setGravity(Gravity.CENTER);
+        footer.addView(minimize, new LinearLayout.LayoutParams(-2, dp(58)));
+        minimize.setOnClickListener(v -> {
             removePanel();
             showBubble();
         });
-        close.setOnClickListener(v -> stopSelf());
+        outer.addView(footer);
+
+        panel = outer;
+        panelParams = makeParams(dp(340), dp(490));
+        panelParams.gravity = Gravity.CENTER;
+        header.setOnTouchListener(dragListener(panelParams, false));
         wm.addView(panel, panelParams);
     }
 
-    private void addCategory(LinearLayout parent, String label) {
-        TextView category = text(label, 11, Color.WHITE);
-        category.setTypeface(Typeface.DEFAULT_BOLD);
-        category.setPadding(dp(8), dp(7), dp(8), dp(7));
-        category.setBackgroundColor(0xFF2F3D4C);
-        LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(-1, -2);
-        p.topMargin = dp(5);
-        parent.addView(category, p);
-    }
-
-    private void addDemoSwitch(LinearLayout parent, String label) {
+    private void addToggle(LinearLayout parent, String label) {
         LinearLayout row = new LinearLayout(this);
         row.setGravity(Gravity.CENTER_VERTICAL);
-        row.setPadding(dp(8), dp(8), dp(8), dp(8));
+        row.setPadding(dp(4), dp(3), dp(8), dp(3));
 
-        TextView name = text(label, 13, Color.WHITE);
-        row.addView(name, new LinearLayout.LayoutParams(0, -2, 1));
+        TextView name = text(label, 20, 0xFFF1F1F1);
+        name.setTypeface(Typeface.DEFAULT_BOLD);
+        row.addView(name, new LinearLayout.LayoutParams(0, dp(58), 1));
 
-        TextView toggle = text("OFF", 11, 0xFFB8C7D9);
+        TextView toggle = text("", 12, Color.WHITE);
         toggle.setGravity(Gravity.CENTER);
-        toggle.setTypeface(Typeface.DEFAULT_BOLD);
-        toggle.setPadding(dp(12), dp(6), dp(12), dp(6));
-        toggle.setBackground(shape(0xFF354451, 0xFF607080));
+        toggle.setBackground(shape(0xFF963342, 0, 28));
+        LinearLayout.LayoutParams toggleParams = new LinearLayout.LayoutParams(dp(52), dp(28));
+        toggleParams.leftMargin = dp(8);
+        row.addView(toggle, toggleParams);
+
+        final boolean[] enabled = {false};
         toggle.setOnClickListener(v -> {
-            boolean enabled = "OFF".contentEquals(toggle.getText());
-            toggle.setText(enabled ? "ON" : "OFF");
-            toggle.setTextColor(enabled ? Color.WHITE : 0xFFB8C7D9);
-            toggle.setBackground(shape(
-                    enabled ? 0xFF248A55 : 0xFF354451,
-                    enabled ? 0xFF52E09A : 0xFF607080));
-            // UI demonstration only: no game or process interaction.
+            enabled[0] = !enabled[0];
+            toggle.setBackground(shape(enabled[0] ? 0xFF28B7D7 : 0xFF963342, 0, 28));
+            // Visual demo switch only; it does not interact with the game.
         });
-        row.addView(toggle, new LinearLayout.LayoutParams(dp(58), dp(32)));
+        parent.addView(row, new LinearLayout.LayoutParams(-1, -2));
+    }
+
+    private void addCheckbox(LinearLayout parent, String label) {
+        LinearLayout row = new LinearLayout(this);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setPadding(dp(4), dp(6), dp(8), dp(6));
+
+        TextView box = text("", 16, Color.WHITE);
+        box.setBackground(shape(Color.TRANSPARENT, 0xFF21C6D0, 2));
+        row.addView(box, new LinearLayout.LayoutParams(dp(30), dp(30)));
+
+        TextView name = text(label, 20, 0xFFF1F1F1);
+        name.setTypeface(Typeface.DEFAULT_BOLD);
+        LinearLayout.LayoutParams nameParams = new LinearLayout.LayoutParams(-1, dp(48));
+        nameParams.leftMargin = dp(10);
+        row.addView(name, nameParams);
+
+        final boolean[] checked = {false};
+        View.OnClickListener listener = v -> {
+            checked[0] = !checked[0];
+            box.setBackground(shape(checked[0] ? 0xFF21C6D0 : Color.TRANSPARENT, 0xFF21C6D0, 2));
+        };
+        box.setOnClickListener(listener);
+        name.setOnClickListener(listener);
         parent.addView(row, new LinearLayout.LayoutParams(-1, -2));
     }
 
