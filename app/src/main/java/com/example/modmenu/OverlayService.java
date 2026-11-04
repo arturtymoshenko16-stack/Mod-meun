@@ -13,7 +13,6 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
-import android.widget.Switch;
 import android.widget.TextView;
 
 public class OverlayService extends Service {
@@ -93,7 +92,10 @@ public class OverlayService extends Service {
         header.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
         TextView collapse = text("—", 24, Color.WHITE);
         collapse.setGravity(Gravity.CENTER);
-        header.addView(collapse, new LinearLayout.LayoutParams(dp(36), dp(32)));
+        header.addView(collapse, new LinearLayout.LayoutParams(dp(34), dp(32)));
+        TextView close = text("×", 24, 0xFFFF7777);
+        close.setGravity(Gravity.CENTER);
+        header.addView(close, new LinearLayout.LayoutParams(dp(34), dp(32)));
         outer.addView(header);
 
         TextView subtitle = text("Floating interface • UI demo", 10, 0xFF82CAFD);
@@ -127,6 +129,7 @@ public class OverlayService extends Service {
             removePanel();
             showBubble();
         });
+        close.setOnClickListener(v -> stopSelf());
         wm.addView(panel, panelParams);
     }
 
@@ -141,16 +144,29 @@ public class OverlayService extends Service {
     }
 
     private void addDemoSwitch(LinearLayout parent, String label) {
-        Switch control = new Switch(this);
-        control.setText(label);
-        control.setTextColor(Color.WHITE);
-        control.setTextSize(13);
-        control.setPadding(dp(8), dp(7), dp(8), dp(7));
-        control.setButtonTintList(android.content.res.ColorStateList.valueOf(0xFF80CBC4));
-        control.setOnCheckedChangeListener((button, checked) -> {
+        LinearLayout row = new LinearLayout(this);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setPadding(dp(8), dp(8), dp(8), dp(8));
+
+        TextView name = text(label, 13, Color.WHITE);
+        row.addView(name, new LinearLayout.LayoutParams(0, -2, 1));
+
+        TextView toggle = text("OFF", 11, 0xFFB8C7D9);
+        toggle.setGravity(Gravity.CENTER);
+        toggle.setTypeface(Typeface.DEFAULT_BOLD);
+        toggle.setPadding(dp(12), dp(6), dp(12), dp(6));
+        toggle.setBackground(shape(0xFF354451, 0xFF607080));
+        toggle.setOnClickListener(v -> {
+            boolean enabled = "OFF".contentEquals(toggle.getText());
+            toggle.setText(enabled ? "ON" : "OFF");
+            toggle.setTextColor(enabled ? Color.WHITE : 0xFFB8C7D9);
+            toggle.setBackground(shape(
+                    enabled ? 0xFF248A55 : 0xFF354451,
+                    enabled ? 0xFF52E09A : 0xFF607080));
             // UI demonstration only: no game or process interaction.
         });
-        parent.addView(control, new LinearLayout.LayoutParams(-1, -2));
+        row.addView(toggle, new LinearLayout.LayoutParams(dp(58), dp(32)));
+        parent.addView(row, new LinearLayout.LayoutParams(-1, -2));
     }
 
     private View.OnTouchListener dragListener(WindowManager.LayoutParams lp, boolean isBubble) {
